@@ -1,0 +1,11 @@
+import {build} from 'esbuild';
+import postcss from 'postcss';
+import tailwind from '@tailwindcss/postcss';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+const root=process.cwd();
+const result=await build({entryPoints:['offline/entry.tsx'],bundle:true,write:false,format:'iife',platform:'browser',minify:true,jsx:'automatic',target:['es2022'],define:{'process.env.NODE_ENV':'"production"'},legalComments:'inline',tsconfig:'tsconfig.json'});
+const css=await postcss([tailwind({base:root})]).process(await fs.readFile('app/globals.css','utf8'),{from:path.join(root,'app/globals.css')});
+const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="Fabric Reality Lab — a self-contained 3D network wind tunnel"><title>Fabric Reality Lab</title><style>'+css.css.replaceAll('</style','<\\/style')+'</style></head><body><div id="root"></div><script>'+result.outputFiles[0].text.replaceAll('</script','<\\/script')+'</script></body></html>';
+await fs.mkdir('public',{recursive:true});await fs.writeFile('public/Fabric-Reality-Lab.html',html);
+console.log(JSON.stringify({file:'public/Fabric-Reality-Lab.html',bytes:Buffer.byteLength(html),externalScripts:0,externalStylesheets:0}));

@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {Simulation,percentile,finishAsync} from '../lib/fabric/simulator';
+import {DEFAULTS,PROFILES,WORKLOADS,ProfileId,TROUBLES} from '../lib/fabric/catalog';
+let cases=0;
+function conserve(s:Simulation,name:string){const r=s.summary();assert.equal(r.censored,0,name+' drains');assert.equal(r.collectiveIncomplete,false,name+' collective complete');assert.equal(r.bytes,s.flows.reduce((a,f)=>a+f.bytes,0),name+' bytes');assert.ok(s.flows.every(f=>f.received===f.bytes&&f.end>=f.start&&f.inflight===0),name+' flows');assert.ok(s.t.links.every(l=>l.directions.every(p=>p.bytes===0&&!p.busy)),name+' ports');assert.ok(Number.isFinite(r.idle)&&r.idle>=0&&r.idle<=1,name+' wait bound');for(const p of s.packets){assert.ok(p.done!>=p.born);for(const h of p.hops)assert.ok(h.end>=h.start&&h.start>=h.enqueue,name+' timestamps')}cases++}
+assert.equal(percentile(Array.from({length:100},(_,i)=>i+1),.99),99);assert.equal(percentile([], .99),0);cases++;
+const partial=new Simulation(DEFAULTS);partial.advance(73);const previous=partial.time;partial.advance(3);assert.equal(partial.time,previous);const partialResult=partial.finish(),fresh=new Simulation(DEFAULTS).finish();for(const key of ['bytes','collective','makespan','packetP99','peakQueue','reroutes'] as const)assert.equal(partialResult[key],fresh[key]);cases++;
+assert.equal(new Simulation(DEFAULTS).finish(5).collectiveIncomplete,true);cases++;
+for(const profile of Object.keys(PROFILES) as ProfileId[]){for(const workload of WORKLOADS){const s=new Simulation({...DEFAULTS,profile,workload:workload.id,messageKiB:64});s.finish(20000);conserve(s,profile+'/'+workload.id)}
+ for(const trouble of TROUBLES){const s=new Simulation({...DEFAULTS,profile,trouble:trouble.id,messageKiB:64,injectAt:10,repairAt:150},true);s.finish(20000);conserve(s,profile+'/'+trouble.id)}
+ for(const impaired of [false,true]){const s=new Simulation({...DEFAULTS,profile,synchronization:'local',trouble:'switch',injectAt:10,repairAt:150},impaired);s.finish(20000);conserve(s,profile+'/local/'+impaired);assert.equal(s.flows.length,896);assert.equal(s.rankFinished,128);for(const f of s.flows){if(f.round===0)continue;const out=s.flows.find(p=>p.src===f.src&&p.round===f.round-1)!,incoming=s.flows.find(p=>p.dst===f.src&&p.round===f.round-1)!;assert.ok(f.start>=Math.max(out.end,incoming.end)+10-1e-8,'rank advances only after own dependencies')}assert.equal(s.collectiveEnd,Math.max(...s.flows.map(f=>f.end)))}
+}
+const fail=new Simulation({...DEFAULTS,messageKiB:1024});fail.advance(12);fail.trouble('switch');fail.advance(30);fail.repair();fail.finish(20000);conserve(fail,'manual mid-flight repair');assert.ok(fail.retries>0,'aborted packets retried');assert.ok(fail.summary().recovery!>=0,'manual repair clock');
+for(const c of [{bufferKiB:32,load:100,rate:100,feedbackUs:.5,hopUs:.05,degradedCapacity:1},{bufferKiB:2048,load:5,rate:800,feedbackUs:20,hopUs:2,degradedCapacity:100}]){const s=new Simulation({...DEFAULTS,...c,messageKiB:64},true);s.finish(20000);conserve(s,'parameter bounds');assert.ok(s.maxQueue<=s.c.bufferKiB*1024)}
+const asyncResult=await finishAsync(new Simulation(DEFAULTS));assert.deepEqual(asyncResult,new Simulation(DEFAULTS).finish());cases++;
+assert.equal(await finishAsync(new Simulation(DEFAULTS),4000,()=>true),null);cases++;
+console.log(JSON.stringify({passed:true,cases,coverage:'44 architecture/workload combinations; 32 architecture/failure combinations; 8 local-dependency runs; clock, percentile, conservation, retry, boundary and async invariants'}));

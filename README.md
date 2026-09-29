@@ -29,11 +29,11 @@ Browser QA exercises the software 3D fallback because WebGL is disabled in the a
 The recipient does not need these commands.
 
 - `npm run dev` — development site
-- `npm run build` — production Worker and assets
+- `npm run build` — production Next.js build for Vercel
 - `node scripts/build-offline.mjs` — self-contained HTML
 - `./node_modules/.bin/esbuild tests/simulation.ts --bundle --platform=node --format=esm --outfile=/tmp/fabric-tests.mjs && node /tmp/fabric-tests.mjs`
 
-The repository preserves the Sites starter and its lifecycle scripts. React, Three.js, Radix and the other bundled packages retain their respective licenses; third-party legal comments are preserved inside the offline bundle.
+The repository uses native Next.js for Vercel. See [deployment instructions](docs/DEPLOYMENT.md). React, Three.js, Radix and the other bundled packages retain their respective licenses; third-party legal comments are preserved inside the offline bundle.
 
 ## Interaction and runtime fixes
 

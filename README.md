@@ -33,12 +33,13 @@ Use Node.js 24.
 npm ci
 npm run dev
 npm run typecheck
+npm run lint
 npm test
 npm run build
 npm run build:offline
 ```
 
-`npm test` runs model, policy, reconstruction and direct-entry regressions. `npm run build:offline` regenerates `public/Fabric-Reality-Lab.html`; commit that file when changing the app so the download matches the site. `npm run lint` exposes existing legacy lint debt; see the validation report for the exact status of this revision.
+`npm test` runs model, policy, reconstruction and direct-entry regressions. `npm run build:offline` regenerates `public/Fabric-Reality-Lab.html`; commit that file when changing the app so the download matches the site. The validation report distinguishes automated checks from browser and hardware coverage.
 
 ## Code map
 

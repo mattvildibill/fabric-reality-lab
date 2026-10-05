@@ -3259,3 +3259,34 @@ td small {
     height: 36px;
   }
 }
+
+/* Compact desktop architecture cards keep workload controls above the fold. */
+@media (min-width: 1101px) {
+  .profile-button {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 58px;
+    padding: 9px 6px;
+  }
+  .profile-symbol {
+    margin: 0;
+  }
+  .profile-symbol svg {
+    width: 14px;
+    height: 14px;
+  }
+  .profile-button > span:nth-child(2) {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .profile-button small {
+    display: none;
+  }
+  .profile-button .selected-dot {
+    width: 4px;
+    height: 4px;
+    top: 5px;
+    right: 5px;
+  }
+}

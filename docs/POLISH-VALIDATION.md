@@ -17,12 +17,21 @@ Passed on the final application code:
 - `npm test`: all five suites, including the new direct-entry and intervention regressions.
 - `npm run typecheck` and `npm run build`: passed; no CSS compiler warnings.
 - `npm run build:offline`: regenerated a self-contained HTML with zero external runtime scripts or stylesheets.
-- Focused ESLint on `FabricLab.tsx`, `experiment.ts`, `entry.tsx` and the test runner: zero findings.
+- `npm run lint`: whole-repository ESLint passes with zero errors and zero warnings. No rules were disabled.
 - `git diff --check`: passed.
 
-Full-repository ESLint still reports 139 errors and 8 warnings in legacy simulation, rendering, analysis and existing test code. This is disclosed debt, not a passing lint result. No lint rules were disabled. Prior `QUALITY.md` describes historical QA and must not be read as fresh evidence for this revision.
+Legacy lint findings were resolved with const declarations, concrete event/queue/rendering types and removal of unused locals/imports. Numerical formulas and event behavior are unchanged. Prior `QUALITY.md` describes historical QA and must not be read as fresh evidence for this revision.
 
-Public-browser verification is pending deployment at the time of this commit.
+## Public browser verification
+
+Checked the production custom domain at commit `3fc5ad1b3a22b50d67ef4b0903a78f92b0413f4e` with Vercel reporting READY for that exact SHA:
+
+- Direct entry shows seeded simulation time, completed-packet telemetry and live traffic, with no film/walkthrough. The scheduled optical intervention was observed at 30 µs.
+- Pause, reset/restart, architecture switching, packet capture, next trace and inspector hide/show passed.
+- Completed-run analysis and replay passed. Paired replay closed and reopened correctly; all four architecture rows completed. Changing a comparison assumption cleared stale results and disabled export until recalculation.
+- No unexpected application console errors were observed. Desktop layout at 1188 CSS pixels had no horizontal overflow. The pressure map stays inside the inspector, leaving the network visible.
+
+The browser has WebGL explicitly disabled, so the software renderer was exercised. This does not certify GPU rendering. Physical mobile, touch hardware and a mobile-sized viewport were not exercised in this environment.
 
 ## Limits
 

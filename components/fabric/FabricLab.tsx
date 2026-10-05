@@ -558,6 +558,7 @@ export default function FabricLab() {
                 className={`profile-button ${c.profile === id ? "active" : ""}`}
                 onClick={() => selectProfile(id)}
                 aria-pressed={c.profile === id}
+                title={`${PROFILES[id].name} · ${PROFILES[id].generation}`}
               >
                 <span
                   className="profile-symbol"
@@ -775,7 +776,7 @@ export default function FabricLab() {
         </div>
         <p className="experiment-note">
           {sim.c.workload === "onepercent" && sim.c.trouble === "optical"
-            ? `128 ranks · 7 dependent rounds · ${100 - sim.c.degradedCapacity}% capacity loss on ceil(1% of fabric links). Drag the network to explore.`
+            ? `128 ranks · ${sim.ideal ? "14 ideal tree stages" : "7 dependent rounds"} · ${100 - sim.c.degradedCapacity}% capacity loss on ceil(1% of fabric links). Drag the network to explore.`
             : "Change the workload or inject a failure. Inspect the recorded traffic to see what changed."}
         </p>
       </section>

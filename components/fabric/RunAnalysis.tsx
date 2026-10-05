@@ -3,8 +3,9 @@ import {useState,useEffect,useRef} from 'react';
 import {Simulation,percentile,finishAsync} from '@/lib/fabric/simulator';
 import {Tabs,TabsList,TabsTrigger} from '@/components/ui/tabs';
 import {num,bytes} from './Panels';
+type SynchronizationResult=ReturnType<Simulation['summary']>&{synchronization:'round'|'local'};
 export default function RunAnalysis({sim,inspect}:{sim:Simulation;inspect:(rank:number)=>void}){
- const [tab,setTab]=useState(sim.collectiveRounds.length?'rounds':'traffic'),[round,setRound]=useState(Math.max(0,sim.collectiveRounds.length-1)),[rank,setRank]=useState<number|null>(null),[pair,setPair]=useState<[number,number]|null>(null),[bench,setBench]=useState<any[]|null>(null),[busy,setBusy]=useState(false);
+ const [tab,setTab]=useState(sim.collectiveRounds.length?'rounds':'traffic'),[round,setRound]=useState(Math.max(0,sim.collectiveRounds.length-1)),[rank,setRank]=useState<number|null>(null),[pair,setPair]=useState<[number,number]|null>(null),[bench,setBench]=useState<SynchronizationResult[]|null>(null),[busy,setBusy]=useState(false);
  const cancelled=useRef(false);useEffect(()=>{cancelled.current=false;return()=>{cancelled.current=true}},[]);
  const flows=sim.flows.filter(f=>f.end>0),r=sim.collectiveRounds[round],rf=flows.filter(f=>f.round===round),last=rf.reduce((a,f)=>!a||f.end>a.end?f:a,null as typeof rf[number]|null),cutoff=r?.end||sim.time;
  const selected=rf.find(f=>f.dst===rank),global=sim.c.synchronization!=='local'||sim.ideal;

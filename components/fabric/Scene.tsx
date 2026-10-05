@@ -1,5 +1,5 @@
 'use client';
-import React,{useEffect,useRef} from 'react';
+import React,{useEffect,useLayoutEffect,useRef} from 'react';
 import {softwareScene} from './softwareScene';
 import * as THREE from 'three';
 import {Line2} from 'three/examples/jsm/lines/Line2.js';
@@ -11,7 +11,7 @@ import {Node} from '@/lib/fabric/topology';
 export type ViewMode='system'|'fabric'|'rack'|'packet'|'graph';
 export type SceneState={sim:Simulation;mode:ViewMode;xray:boolean;filter:string;classFilter:string;rankFilter:number;selectedNode:number|null;selectedPacket:Packet|null;quality:number;microscope:boolean;microTime:number;viewRevision:number;focusRoute?:boolean};
 export default function Scene({state,onSelect,onPacket,onReady}:{state:React.RefObject<SceneState>;onSelect:(id:number)=>void;onPacket:(p:Packet)=>void;onReady:(ok:boolean)=>void}){
- const el=useRef<HTMLDivElement>(null);const actions=useRef({onSelect,onPacket,onReady});actions.current={onSelect,onPacket,onReady};
+ const el=useRef<HTMLDivElement>(null);const actions=useRef({onSelect,onPacket,onReady});useLayoutEffect(()=>{actions.current={onSelect,onPacket,onReady}});
  useEffect(()=>{
   if(!el.current)return;const root=el.current;let renderer:THREE.WebGLRenderer;
   try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:false,powerPreference:'high-performance'});}catch{return softwareScene(root,state,actions)}

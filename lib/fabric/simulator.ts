@@ -10,7 +10,7 @@ export function percentile(values:number[],q:number){if(!values.length)return 0;
 export class Simulation{
  c:Config;t:Topology;time=0;heap=new Heap();seq=0;packetId=0;flows:Flow[]=[];packets:Packet[]=[];visual:Packet[]=[];samples:Sample[]=[];events:{time:number;text:string;kind:string}[]=[];routeCache=new Map<string,number[][]>();
  bytesDelivered=0;wireBytes=0;retries=0;reroutes=0;throttleCount=0;injected=false;repaired=false;affectedLinks:number[]=[];impairment:string|null=null;failureAt=0;recoveryAt:number|null=null;collectiveStart=0;collectiveEnd=0;collectiveRounds:{round:number;start:number;end:number}[]=[];roundRemaining=new Map<number,number>();rng:number;lastSample=0;done=false;maxQueue=0;fct:number[]=[];lastStats:any;packetLatency:number[]=[];baseline:any=null;ideal=false;receiverActive=new Uint16Array(RANKS);rankReady=new Map<string,number>();rankFinished=0;
- constructor(c:Config,autoTrouble=false){this.c={...c};this.rng=c.seed>>>0;this.t=topology(c);this.lastStats=graphStats(this.t);this.ideal=c.profile==='quantum'&&c.collective&&(c.workload==='allreduce'||c.workload==='onepercent');this.launch();if(autoTrouble){this.schedule(c.injectAt,'trouble',c.workload==='onepercent'?'optical':c.trouble);this.schedule(c.repairAt,'repair',null)}}
+ constructor(c:Config,autoTrouble=false){this.c={...c};this.rng=c.seed>>>0;this.t=topology(c);this.lastStats=graphStats(this.t);this.ideal=c.profile==='quantum'&&c.collective&&(c.workload==='allreduce'||c.workload==='onepercent');this.launch();if(autoTrouble){this.schedule(c.injectAt,'trouble',c.trouble);this.schedule(c.repairAt,'repair',null)}}
  random(){let x=this.rng;x^=x<<13;x^=x>>>17;x^=x<<5;this.rng=x>>>0;return this.rng/4294967296}
  schedule(t:number,type:string,data:any){this.heap.push({t:Math.max(t,this.time),seq:this.seq++,type,data})}
  log(text:string,kind='info'){this.events.push({time:this.time,text,kind});if(this.events.length>80)this.events.shift()}
@@ -97,6 +97,8 @@ export class Simulation{
  if(kind==='noise')for(let i=0;i<32;i++)this.addFlow(i,64+i,this.c.messageKiB*1024*16,0,this.time,'noisy neighbor');
  this.routeCache.clear();this.lastStats=graphStats(this.t);this.log(`${kind}: ${this.affectedLinks.length?this.affectedLinks.length+' links affected':'traffic injected'}`,'fault');
  }
+ // Replace scheduled interventions when the user injects a live fault.
+ intervene(kind:string,repairDelay=400){if(this.injected&&!this.repaired)return;const events=this.heap.a.filter(e=>e.type!=='trouble'&&e.type!=='repair');this.heap=new Heap();for(const event of events)this.heap.push(event);this.c.trouble=kind;this.trouble(kind);this.c.repairAt=this.time+repairDelay;this.schedule(this.c.repairAt,'repair',null)}
  repair(){if(!this.injected||this.repaired)return;for(const l of this.t.links){l.failed=false;l.factor=1}this.routeCache.clear();this.repaired=true;this.c.repairAt=this.time;this.lastStats=graphStats(this.t);this.log('Link capacity restored; queued work drains','success')}
  sample(){const pct=(q:number)=>percentile(this.packetLatency,q);let dt=this.time-this.lastSample||1,util=0,cap=0,queue=0,congested=0;
  for(const l of this.t.links){let capacity=l.failed?0:this.rate()*l.factor*l.capacity*2; l.util=capacity?Math.min(1,l.windowBytes/(dt*capacity)):0;util+=l.windowBytes;cap+=capacity*dt;queue+=l.directions[0].bytes+l.directions[1].bytes;if(Math.max(...l.directions.map(p=>p.bytes))>this.c.bufferKiB*1024*.25)congested++;l.windowBytes=0}
